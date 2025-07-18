@@ -24,7 +24,7 @@ source venv/bin/activate
 python -m venv venv
 venv\Scripts\activate
 ```
-2. **Установите зависимости**
+3. **Установите зависимости**
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
