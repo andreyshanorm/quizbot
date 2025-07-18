@@ -13,8 +13,9 @@
 ```bash
 git clone https://github.com/yourusername/quizmasterbot.git
 cd quizmasterbot
-
+```
 2. **Создайте виртуальное окружение**
+```bash
 # Для Linux/macOS
 python3 -m venv venv
 source venv/bin/activate
@@ -22,7 +23,9 @@ source venv/bin/activate
 # Для Windows
 python -m venv venv
 venv\Scripts\activate
-
+```
 2. **Установите зависимости**
+```bash
 pip install --upgrade pip
 pip install -r requirements.txt
+```
