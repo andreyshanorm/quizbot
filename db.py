@@ -80,12 +80,9 @@ async def show_user_statistics(user_id, message):
             WHERE user_id = ? 
         ''', (user_id,)) as cursor:
             total_questions, correct_answers = await cursor.fetchone()
-
-        if total_questions == 0:
-            await message.answer("Вы еще не прошли ни одного вопроса викторины.")
-        else:
+        if total_questions != 0:
             await update_best_score(user_id, correct_answers)
-            await message.answer(f"Вы ответили на {total_questions} вопросов, из которых {correct_answers} были правильными.")
+        return total_questions, correct_answers
 
 async def start_new_quiz(user_id):
     async with aiosqlite.connect(DB_NAME) as db:

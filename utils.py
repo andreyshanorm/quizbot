@@ -8,6 +8,17 @@ from aiogram import F
 
 dp = Dispatcher()  # Инициализация диспетчера для обработки входящих сообщений и событий
 
+def create_buttons(builder):
+    builder.add(types.KeyboardButton(text="Начать игру"))
+    builder.add(types.KeyboardButton(text="Показать статистику"))
+    builder.add(types.KeyboardButton(text="Показать лидеров"))
+    builder.add(types.KeyboardButton(text="Создать пользователя"))
+
+def get_reply_keyboard() -> types.ReplyKeyboardMarkup:
+    builder = ReplyKeyboardBuilder()
+    create_buttons(builder)  
+    return builder.as_markup(resize_keyboard=True)
+
 async def handle_answer(callback: types.CallbackQuery, is_correct: bool):
     await callback.bot.edit_message_reply_markup(
         chat_id=callback.from_user.id,
@@ -41,12 +52,13 @@ async def wrong_answer(callback: types.CallbackQuery):
     await handle_answer(callback, is_correct=False) 
 
 async def finish_quiz(message, user_id):
-    await message.answer("Это был последний вопрос. Квиз завершен!")
+    await message.answer("Это был последний вопрос. Квиз завершен!", reply_markup=get_reply_keyboard())
     await show_user_statistics(user_id, message)
 
 waiting_for_nickname = {} 
 
 # Обработчик команды /create_user
+@dp.message(F.text == "Создать пользователя") 
 @dp.message(Command("create_user"))
 async def cmd_create_user(message: types.Message):
     user_id = message.from_user.id
@@ -67,7 +79,7 @@ async def process_nickname(message: types.Message):
     
     try:
         await create_user_name(user_id, nickname)
-        await message.answer(f"✅ Пользователь {nickname} успешно создан!")
+        await message.answer(f"✅ Пользователь {nickname} успешно создан!", reply_markup=get_reply_keyboard())
     except Exception as e:
         await message.answer(f"⚠️ Ошибка: {str(e)}")
     finally:
@@ -83,16 +95,16 @@ async def cmd_quiz(message: types.Message):
 @dp.message(Command("start")) 
 async def cmd_start(message: types.Message):
     builder = ReplyKeyboardBuilder()
-    builder.add(types.KeyboardButton(text="Начать игру"))
-    builder.add(types.KeyboardButton(text="Показать статистику"))
-    builder.add(types.KeyboardButton(text="Показать лидеров"))
+    create_buttons(builder)
     await message.answer(
         "Добро пожаловать в квиз!\n\n"
+        "Перед началом игры вы должны создать пользователя:\n"
+        "- /create_user — создать нового пользователя\n"
         "Вы можете:\n"
         "- Нажать «Начать игру», чтобы пройти викторину.\n"
-        "- Нажать «Показать статистику», чтобы увидеть свои результаты.\n\n"
+        "- Нажать «Показать статистику», чтобы увидеть свои результаты.\n"
+        "- Нажать «Показать лидеров», чтобы увидеть свои результаты.\n"
         "Также доступны команды:\n"
-        "- /create_user — создать нового пользователя\n"
         "- /quiz — начать новую игру\n"
         "- /stats — показать статистику\n"
         "- /best - показать список лучших участников",
@@ -104,11 +116,11 @@ async def cmd_start(message: types.Message):
 async def cmd_quiz(message: types.Message):
     best = await get_top_rating()
     if best == 0:
-        await message.answer(f"В Квизе не поучаствовало еще ни одного игрока")
+        await message.answer(f"В Квизе не поучаствовало еще ни одного игрока", reply_markup=get_reply_keyboard())
         return
     for index, item in enumerate(best):
         player_place = index + 1
-        await message.answer(f"Место №{player_place} занимает {item[0]} со счетом {item[1]}")
+        await message.answer(f"Место №{player_place} занимает {item[0]} со счетом {item[1]}", reply_markup=get_reply_keyboard())
         if index > 3:
             break
     
@@ -118,4 +130,8 @@ async def cmd_quiz(message: types.Message):
 @dp.message(Command("stats"))
 async def cmd_show_stats(message: types.Message):
     user_id = message.from_user.id
-    await show_user_statistics(user_id, message)
+    total, correct = await show_user_statistics(user_id, message)
+    if total == 0:
+        await message.answer("Вы еще не прошли ни одного вопроса викторины.", reply_markup=get_reply_keyboard())
+    else:
+        await message.answer(f"Вы ответили на {total} вопросов, из которых {correct} были правильными.", reply_markup=get_reply_keyboard())
